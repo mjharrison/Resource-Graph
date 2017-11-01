@@ -24,10 +24,20 @@ class ResourceGraph:
 			self.__ensure_resource__(resource_name)
 			new_process_node.add_child(self.resources[resource_name])
 
-	def detect_cycles(self, find_all=False):
+	def detect_cycles(self, find_all=False, override=None):
 		print("Searching resource graph for cycles.")
+
+		detection_function = self.__detect_cycles_dfs__
+		if override:
+			print("Overriding default cycle detection algorithm (DFS) with:", override)
+			if override is "floyd":
+				detection_function = self.__detect_cycles_floyd__
+			else:
+				print("Cycle detection algorithm", override, "not implemented")
+
 		for node in self.processes:
-			path_with_cycle = self.__detect_cycles__(node)
+			print("Searching for cycles from node", node.name)
+			path_with_cycle = self.__detect_cycles_dfs__(node)
 			if path_with_cycle:
 				print("Path with cycle:", [visited_node.name for visited_node in path_with_cycle])
 				if not find_all:
@@ -63,12 +73,11 @@ class ResourceGraph:
 		if resource_name not in self.resources:
 			self.resources[resource_name] = Node(resource_name, False)
 
-	def __detect_cycles__(self, node):
-		print("Searching for cycles from node", node.name)
+	def __detect_cycles_dfs__(self, root):
 		visited = []
 		frontier = []
 
-		frontier.append(node)
+		frontier.append(root)
 		while frontier:
 			node = frontier.pop()
 			if node in visited:
@@ -80,6 +89,36 @@ class ResourceGraph:
 			for child in node.children:
 				frontier.append(child)
 		return None
+
+	def __detect_cycles_floyd__(self, root):
+		def __floyd_step__(node):
+			next_node = None
+			if node in visited:
+				index = visited.index(node)+1
+				if index < len(visited):
+					next_node = visited[index]
+			return next_node
+
+		print("Searching for cycles from node", root.name)
+		visited = []
+		frontier = []
+
+		frontier.append(root)
+		while frontier:
+			node = frontier.pop()
+			visited.append(node)
+			for child in node.children:
+				frontier.append(child)
+
+		tortoise = __floyd_step__(root)
+		hare = __floyd_step__(__floyd_step__(root))
+		while tortoise is not hare:
+			tortoise = __floyd_step__(tortoise)
+			hare = __floyd_step__(__floyd_step__(hare))
+		if tortoise is hare and tortoise is not None:
+			return visited
+		return None
+
 
 def main():
 	resource_graph = ResourceGraph()
@@ -93,7 +132,7 @@ def main():
 
 	resource_graph.display()
 
-	resource_graph.detect_cycles()
+	resource_graph.detect_cycles(override="floyd")
 
 if __name__ == "__main__":
 	main()
