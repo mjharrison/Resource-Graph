@@ -12,7 +12,7 @@ def main():
 
 	resource_graph.display()
 
-    resource_graph.detect_cycles()
+	resource_graph.detect_cycles()
 	resource_graph.detect_cycles(override="floyd")
 
 if __name__ == "__main__":
