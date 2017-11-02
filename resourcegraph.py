@@ -1,3 +1,25 @@
+"""resourcegraph.py
+
+Author: Matthew James Harrison
+Class: CSI-480 AI
+Assignment: 2 - Deadlocks
+Due Date: November 4, 2017
+
+Description:
+Module for creating resource graphs and detecting deadlocks in them.
+
+Certification of Authenticity:
+I certify that this is entirely my own work, except where I have given
+fully-documented references to the work of others. I understand the definition
+and consequences of plagiarism and acknowledge that the assessor of this
+assignment may, for the purpose of assessing this assignment:
+ - Reproduce this assignment and provide a copy to another member of academic
+   staff; and/or
+ - Communicate a copy of this assignment to a plagiarism checking service
+   (which may then retain a copy of this assignment on its database for the
+   purpose of future plagiarism checking)
+"""
+
 class Node:
 	def __init__(self, name, is_process):
 		self.name = name
@@ -5,6 +27,10 @@ class Node:
 		self.children = []
 
 	def add_child(self, child):
+		""" Purpose: Add a child to the node.
+		Pre: Child node
+		Post: Child node added to children
+		"""
 		self.children.append(child)
 
 class ResourceGraph:
@@ -12,21 +38,30 @@ class ResourceGraph:
 		self.resources = {}
 		self.processes = []
 
-	def add_node(self, name, resource_names_owned, resource_names_requested):
-		new_process_node = Node(name, True)
+	def add_node(self, process_name, resource_names_owned, resource_names_requested):
+		""" Purpose: Add a process node to the graph.
+		Pre: Process name, names of owned resources, and names of requested resources
+		Post: Process node created with specified connections to resources
+		"""
+		# Create the new process and add it to the processes list
+		new_process_node = Node(process_name, True)
 		self.processes.append(new_process_node)
 
-		# Connect resource(s) to owner process
+		# Create connections from owned resources to the new process
 		for resource_name in resource_names_owned:
 			self.__ensure_resource__(resource_name)
 			self.resources[resource_name].add_child(new_process_node)
 
-		# Connect process to requested resource(s)
+		# Create connections from the new process to its requested resources
 		for resource_name in resource_names_requested:
 			self.__ensure_resource__(resource_name)
 			new_process_node.add_child(self.resources[resource_name])
 
 	def detect_cycles(self, find_all=False, override=None):
+		""" Purpose: Detect cycles (i.e. deadlocks) in the resource graph
+		Pre: Whether or not to find all cycles (optional), name of detection algorithm (optional)
+		Post: Detection results printed to console
+		"""
 		print("Searching resource graph for cycles.")
 
 		# Select a detection function (only DFS and Floyd are available)
@@ -50,6 +85,10 @@ class ResourceGraph:
 					break
 
 	def display(self):
+		""" Purpose: Display the processes, resources, and their relations
+		Pre: None
+		Post: Output printed to console
+		"""
 		# Generate a map: { Process name : list of owned resources }
 		# i.e. reverse-engineer the reverse connections
 		reverse_connections = {}
@@ -71,7 +110,10 @@ class ResourceGraph:
 		print("All resources:", [key for key in self.resources.keys()])
 
 	def get_process_by_name(self, name, get_all=False):
-		# Utility function for searching the process list
+		""" Purpose: Utility function for finding processes by name
+		Pre: Process name, whether or not to get a list of all matching processes (optional)
+		Post: Returns process node (or list of process nodes)
+		"""
 		search_result = None
 		matches = [node for node in self.processes if node.name is name]
 		if matches:
@@ -82,11 +124,19 @@ class ResourceGraph:
 		return search_result
 
 	def __ensure_resource__(self, resource_name):
+		""" Purpose: Creates a resource if it doesn't exist
+		Pre: Resource name
+		Post: Resource created if it doesn't exist
+		"""
 		# If a resource does not exist, add it
 		if resource_name not in self.resources:
 			self.resources[resource_name] = Node(resource_name, False)
 
 	def __detect_cycles_dfs__(self, root):
+		""" Purpose: Use DFS to detect cycles
+		Pre: Node to start DFS at
+		Post: Returns path containing cycle, or None if no cycle exists
+		"""
 		# Perform a depth-first search
 		# A cycle is found if a node's successor already exists in the visited list
 		visited = []
@@ -104,8 +154,15 @@ class ResourceGraph:
 		return None
 
 	def __detect_cycles_floyd__(self, root):
-		# Helper function for traversing the list
+		""" Purpose: Use Floyd's algorithm to detect cycles
+		Pre: Node to start DFS at
+		Post: Returns path containing cycle, or None if no cycle exists
+		"""
 		def __floyd_step__(node):
+			""" Purpose: Helper function for stepping through linked list
+			Pre: Current node (note: this has access to parent function's variables)
+			Post: Next node or None if no additional nodes exist
+			"""
 			next_node = None
 			if node in visited:
 				index = visited.index(node)+1
